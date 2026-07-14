@@ -205,9 +205,11 @@
     if(!text) return;
     var url = API_BASE + '/api/flash?message=' + encodeURIComponent(text) + '&mode=' + currentMode + '&flash=' + (currentFlash ? '1':'0');
     if(tokenInput.value) url += '&token=' + encodeURIComponent(tokenInput.value);
-    fetch(url).then(function(r){
-      if(r.status === 401){ alert('Access token rejected — check the token field.'); }
-    }).catch(function(){
+    // no-cors: we only need the request to be sent, not to read the
+    // response. Reading it can spuriously fail if the Codespace's port
+    // proxy adds its own CORS header on top of ours, even though the
+    // request itself went through fine (the display updates either way).
+    fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(function(){
       alert('Could not reach the demo server — it may be asleep.');
     });
   }
@@ -215,9 +217,7 @@
   clearBtn.addEventListener('click', function(){
     var url = API_BASE + '/api/clear';
     if(tokenInput.value) url += '?token=' + encodeURIComponent(tokenInput.value);
-    fetch(url).then(function(r){
-      if(r.status === 401){ alert('Access token rejected — check the token field.'); }
-    }).catch(function(){
+    fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(function(){
       alert('Could not reach the demo server — it may be asleep.');
     });
   });
