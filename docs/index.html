@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cue Flash — Live Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Archivo+Black&display=swap');
+  :root{ --paper:#e8e5da; --ink:#0b0b0c; --amber:#ffb000; --red:#e8402c; --green:#3fae55; }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--ink); color:var(--paper);
+    font-family:'JetBrains Mono', monospace; display:flex; justify-content:center;
+  }
+  .wrap{ width:100%; max-width:560px; padding:40px 20px 60px; }
+  .cue-num{ font-size:11px; letter-spacing:.18em; color:var(--amber); font-weight:700; }
+  h1{ font-family:'Archivo Black', sans-serif; font-size:26px; margin:6px 0 0; }
+  p.sub{ color:rgba(232,229,218,.6); font-size:14px; line-height:1.6; margin-top:14px; }
+
+  .status-box{
+    margin-top:28px; border:1.5px solid rgba(232,229,218,.25); border-radius:6px;
+    padding:22px; display:flex; align-items:flex-start; gap:14px;
+  }
+  .status-dot{ width:12px; height:12px; border-radius:50%; margin-top:5px; flex-shrink:0; background:rgba(232,229,218,.3); }
+  .status-dot.checking{ background:var(--amber); animation:pulse 1s infinite; }
+  .status-dot.live{ background:var(--green); }
+  .status-dot.asleep{ background:var(--red); }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+  .status-title{ font-weight:800; font-size:14px; letter-spacing:.04em; }
+  .status-detail{ font-size:13px; color:rgba(232,229,218,.6); margin-top:6px; line-height:1.6; }
+
+  a.demo-link{
+    display:inline-block; margin-top:16px; padding:14px 22px; background:var(--amber);
+    color:var(--ink); text-decoration:none; font-weight:800; border-radius:4px; font-size:14px;
+    letter-spacing:.04em;
+  }
+  a.demo-link.disabled{
+    background:rgba(232,229,218,.12); color:rgba(232,229,218,.35); pointer-events:none;
+  }
+
+  .section-label{
+    font-size:10.5px; letter-spacing:.16em; color:rgba(232,229,218,.55);
+    margin:34px 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .section-label::after{ content:''; flex:1; height:1px; background:rgba(232,229,218,.15); }
+
+  ol{ padding-left:20px; font-size:13.5px; line-height:1.9; color:rgba(232,229,218,.85); }
+  code{ background:rgba(232,229,218,.08); padding:2px 6px; border-radius:3px; font-size:12.5px; }
+  a{ color:var(--amber); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="cue-num">CUE FLASH</div>
+  <h1>LIVE DEMO</h1>
+  <p class="sub">
+    A stage message-flash system: a control panel sends a message, it
+    appears full-screen on connected displays instantly. This demo runs in
+    a free GitHub Codespace — it goes to sleep after a period of inactivity
+    and has to be manually restarted by the maintainer, so it won't always
+    be online.
+  </p>
+
+  <div class="status-box">
+    <div class="status-dot checking" id="statusDot"></div>
+    <div>
+      <div class="status-title" id="statusTitle">CHECKING DEMO STATUS&hellip;</div>
+      <div class="status-detail" id="statusDetail">Pinging the Codespace.</div>
+      <a href="#" class="demo-link disabled" id="demoLink" target="_blank" rel="noopener">OPEN DEMO CONTROL PANEL</a>
+    </div>
+  </div>
+
+  <div class="section-label">RUN YOUR OWN COPY</div>
+  <p class="sub" style="margin-top:0;">
+    The demo is for trying it out only. For an actual show, run your own
+    local copy — it's a two-minute setup and doesn't depend on the internet
+    or on someone else's Codespace being awake.
+  </p>
+  <ol>
+    <li>On the repo page, click <strong>Code → Download ZIP</strong> (or <code>git clone</code> it).</li>
+    <li>Install <a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a>, then in the folder run <code>npm install</code>.</li>
+    <li>Run <code>node server.js</code>, open the printed URL.</li>
+  </ol>
+  <p class="sub">Full instructions, iPad setup, and Bitfocus Companion wiring are in the repo's README.</p>
+</div>
+
+<script>
+  // Fill this in once you have your Codespace's forwarded URL, e.g.
+  // "https://your-codespace-name-3000.app.github.dev"
+  var DEMO_BASE = "REPLACE_WITH_CODESPACE_URL";
+
+  var dot = document.getElementById('statusDot');
+  var title = document.getElementById('statusTitle');
+  var detail = document.getElementById('statusDetail');
+  var link = document.getElementById('demoLink');
+
+  function setState(state, titleText, detailText, enableLink){
+    dot.className = 'status-dot ' + state;
+    title.textContent = titleText;
+    detail.textContent = detailText;
+    if(enableLink){
+      link.classList.remove('disabled');
+      link.href = DEMO_BASE + '/control.html';
+    } else {
+      link.classList.add('disabled');
+      link.removeAttribute('href');
+    }
+  }
+
+  if(!DEMO_BASE || DEMO_BASE.indexOf('REPLACE_WITH') === 0){
+    setState('asleep', 'DEMO NOT CONFIGURED YET',
+      'The maintainer hasn\'t pointed this page at a running Codespace yet — try the local install below.', false);
+  } else {
+    fetch(DEMO_BASE + '/api/state', { cache: 'no-store' })
+      .then(function(r){
+        if(!r.ok) throw new Error('bad status');
+        return r.json();
+      })
+      .then(function(){
+        setState('live', 'DEMO IS LIVE',
+          'The Codespace is awake and responding — go ahead and open it.', true);
+      })
+      .catch(function(){
+        setState('asleep', 'DEMO IS ASLEEP RIGHT NOW',
+          'The Codespace has spun down from inactivity and needs the maintainer to restart it. Try again later, or run your own copy below — it takes about two minutes.', false);
+      });
+  }
+</script>
+</body>
+</html>
