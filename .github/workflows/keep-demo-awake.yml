@@ -1,0 +1,39 @@
+name: Keep Cue Flash demo awake
+
+# Runs on a schedule and restarts the demo Codespace if it has stopped.
+# This does NOT let a website visitor trigger a wake-up directly — that
+# would require exposing a GitHub token in public-facing code, which is
+# unsafe. Instead this keeps the Codespace awake during the hours you
+# choose below, so it's very likely to be up whenever someone checks the
+# demo, without ever needing to be always-on (which would burn through
+# the Codespaces free quota fast).
+
+on:
+  schedule:
+    # Every 3 hours, comfortably inside the 4-hour max idle timeout.
+    # Adjust the hours here to match when you actually want the demo
+    # reachable — e.g. '0 13-23 * * *' only tries during 9am-7pm ET.
+    - cron: '0 */3 * * *'
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the codespace if it's stopped
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACES_PAT }}
+          CODESPACE_NAME: ${{ secrets.CODESPACE_NAME }}
+        run: |
+          if [ -z "$CODESPACE_NAME" ]; then
+            echo "CODESPACE_NAME secret is not set — see DEPLOY-GITHUB-CODESPACES.md" >&2
+            exit 1
+          fi
+          STATE=$(gh api "/user/codespaces" --jq ".codespaces[] | select(.name==\"$CODESPACE_NAME\") | .state")
+          echo "Current state: $STATE"
+          if [ "$STATE" != "Available" ]; then
+            gh api -X POST "/user/codespaces/$CODESPACE_NAME/start"
+            echo "Start requested."
+          else
+            echo "Already running — nothing to do."
+          fi
