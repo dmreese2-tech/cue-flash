@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cue Flash - Display (Demo)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #0b0b0c;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  * { box-sizing: border-box; }
+
+  #stage {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6%;
+  }
+  #stage.bg-dark   { background: #0b0b0c; color: #f2efe4; }
+  #stage.bg-light  { background: #f2efe4; color: #0b0b0c; }
+  #stage.bg-urgent { background: #e8402c; color: #ffffff; }
+
+  #displayText {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    line-height: 1.02;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  #idle {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #0b0b0c;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    color: #4a4a4a;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    text-align: center;
+    padding: 8%;
+  }
+  #idle .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4a4a4a;
+    margin-bottom: 14px;
+  }
+  #idle .dot.live { background: #3fae55; }
+  #idle .label {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #idle .sub {
+    margin-top: 14px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #333;
+    max-width: 320px;
+  }
+</style>
+</head>
+<body>
+
+<div id="idle">
+  <div class="dot" id="statusDot"></div>
+  <div class="label" id="statusLabel">CONNECTING&hellip;</div>
+  <div class="sub">DEMO DISPLAY &mdash; RUNS ON A GITHUB CODESPACE THAT SLEEPS WHEN IDLE</div>
+</div>
+
+<div id="stage" class="bg-dark" style="display:none;">
+  <div id="displayText"></div>
+</div>
+
+<script src="cueflash-config.js"></script>
+<script>
+(function () {
+  var API_BASE = window.CUEFLASH_API_BASE || '';
+
+  var stage = document.getElementById('stage');
+  var idle = document.getElementById('idle');
+  var textEl = document.getElementById('displayText');
+  var statusDot = document.getElementById('statusDot');
+  var statusLabel = document.getElementById('statusLabel');
+  var flashTimer = null;
+
+  function setStatus(connected) {
+    statusDot.className = 'dot' + (connected ? ' live' : '');
+    statusLabel.innerHTML = connected ? 'READY &mdash; WAITING FOR CUE' : 'CONNECTING&hellip;';
+  }
+
+  function clearFlashTimer() {
+    if (flashTimer) { clearInterval(flashTimer); flashTimer = null; }
+    stage.style.opacity = '1';
+  }
+
+  function startFlashTimer() {
+    clearFlashTimer();
+    var visible = true;
+    flashTimer = setInterval(function () {
+      visible = !visible;
+      stage.style.opacity = visible ? '1' : '0.15';
+    }, 500);
+  }
+
+  function fitText() {
+    var maxWidth = stage.clientWidth * 0.92;
+    var maxHeight = stage.clientHeight * 0.8;
+    var size = 260;
+    textEl.style.fontSize = size + 'px';
+    var i = 0;
+    while ((textEl.scrollWidth > maxWidth || textEl.scrollHeight > maxHeight) && size > 18 && i < 80) {
+      size -= 4;
+      textEl.style.fontSize = size + 'px';
+      i++;
+    }
+  }
+
+  function applyState(state) {
+    if (!state) return;
+    if (!state.active || !state.message) {
+      stage.style.display = 'none';
+      idle.style.display = '-webkit-box';
+      idle.style.display = '-webkit-flex';
+      idle.style.display = 'flex';
+      clearFlashTimer();
+      return;
+    }
+    idle.style.display = 'none';
+    stage.style.display = '-webkit-box';
+    stage.style.display = '-webkit-flex';
+    stage.style.display = 'flex';
+    stage.className = 'bg-' + (state.mode || 'dark');
+    textEl.innerHTML = '';
+    textEl.appendChild(document.createTextNode(state.message));
+    fitText();
+    if (state.flash) { startFlashTimer(); } else { clearFlashTimer(); }
+  }
+
+  window.onresize = function () { if (stage.style.display !== 'none') fitText(); };
+
+  // ---- Transport: WebSocket, falling back to polling ----
+  var usingPoll = false;
+  var pollTimer = null;
+  var ws = null;
+
+  function poll() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', API_BASE + '/api/state', true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          try { applyState(JSON.parse(xhr.responseText)); setStatus(true); } catch (e) {}
+        } else {
+          setStatus(false);
+        }
+        pollTimer = setTimeout(poll, 1000);
+      }
+    };
+    xhr.send();
+  }
+
+  function startPolling() {
+    if (usingPoll) return;
+    usingPoll = true;
+    poll();
+  }
+
+  function wsUrl() {
+    if (API_BASE) {
+      // Turn https://... into wss://... (or http:// into ws://)
+      return API_BASE.replace(/^http/, 'ws');
+    }
+    var proto = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
+    return proto + window.location.host;
+  }
+
+  function connect() {
+    try {
+      ws = new WebSocket(wsUrl());
+    } catch (e) {
+      startPolling();
+      return;
+    }
+    var openedOk = false;
+    ws.onopen = function () {
+      openedOk = true;
+      usingPoll = false;
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+      setStatus(true);
+    };
+    ws.onmessage = function (evt) {
+      try { applyState(JSON.parse(evt.data)); } catch (e) {}
+    };
+    ws.onerror = function () {
+      if (!openedOk) startPolling();
+    };
+    ws.onclose = function () {
+      setStatus(false);
+      if (!usingPoll) startPolling();
+      setTimeout(connect, 3000);
+    };
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

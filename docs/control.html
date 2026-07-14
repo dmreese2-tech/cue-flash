@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cue Flash — Control</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Archivo+Black&display=swap');
+  :root{
+    --paper:#e8e5da; --ink:#0b0b0c; --amber:#ffb000; --red:#e8402c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:var(--ink); color:var(--paper);
+    font-family:'JetBrains Mono', monospace;
+    display:flex; justify-content:center;
+  }
+  .wrap{ width:100%; max-width:520px; padding:24px 18px 40px; }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:2px solid rgba(232,229,218,0.25);
+    padding-bottom:14px; margin-bottom:6px;
+  }
+  h1{ font-family:'Archivo Black', sans-serif; font-size:22px; margin:4px 0 0; }
+  .cue-num{ font-size:11px; letter-spacing:.18em; color:var(--amber); font-weight:700; }
+  #connStatus{ font-size:11px; letter-spacing:.1em; display:flex; align-items:center; gap:6px; }
+  #connDot{ width:8px; height:8px; border-radius:50%; background:#4a4a4a; }
+  #connDot.live{ background:#3fae55; }
+
+  .section-label{
+    font-size:10.5px; letter-spacing:.16em; color:rgba(232,229,218,.55);
+    margin:22px 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .section-label::after{ content:''; flex:1; height:1px; background:rgba(232,229,218,.15); }
+
+  .presets{ display:flex; flex-wrap:wrap; gap:10px; }
+  .preset-btn{
+    font-family:'JetBrains Mono', monospace; font-weight:700; font-size:14px;
+    padding:14px 16px; background:transparent; border:1.5px solid rgba(232,229,218,.3);
+    color:var(--paper); border-radius:3px; cursor:pointer; flex:1 1 46%;
+  }
+  .preset-btn .tag{ display:block; font-size:9.5px; letter-spacing:.14em; color:rgba(232,229,218,.45); margin-bottom:5px; }
+  .preset-btn.urgent{ border-color:rgba(232,64,44,.55); }
+  .preset-btn.urgent .tag{ color:var(--red); }
+  .preset-btn.active-preset{ outline:2px solid var(--amber); }
+
+  textarea{
+    width:100%; resize:none; background:rgba(232,229,218,.05);
+    border:1.5px solid rgba(232,229,218,.3); border-radius:3px; color:var(--paper);
+    font-family:'JetBrains Mono', monospace; font-size:16px; padding:14px; min-height:60px; outline:none;
+  }
+  textarea:focus{ border-color:var(--amber); }
+
+  .row{ display:flex; gap:8px; margin-top:12px; }
+  .toggle-group{ display:flex; gap:8px; flex:1; }
+  .toggle{
+    flex:1; padding:12px 6px; border:1.5px solid rgba(232,229,218,.3); border-radius:3px;
+    background:transparent; color:rgba(232,229,218,.7); font-family:'JetBrains Mono', monospace;
+    font-size:12px; font-weight:700; letter-spacing:.06em; cursor:pointer;
+  }
+  .toggle.active{ background:var(--paper); color:var(--ink); border-color:var(--paper); }
+  .toggle.active.mode-urgent{ background:var(--red); color:#fff; border-color:var(--red); }
+
+  #goBtn{
+    margin-top:20px; width:100%; padding:20px; background:var(--amber); color:var(--ink);
+    border:none; border-radius:4px; font-family:'Archivo Black', sans-serif; font-size:18px; letter-spacing:.08em; cursor:pointer;
+  }
+  #goBtn:disabled{ background:rgba(232,229,218,.12); color:rgba(232,229,218,.3); cursor:not-allowed; }
+  #clearBtn{
+    margin-top:10px; width:100%; padding:14px; background:transparent; color:rgba(232,229,218,.6);
+    border:1.5px solid rgba(232,229,218,.25); border-radius:4px; font-family:'JetBrains Mono', monospace;
+    font-size:13px; letter-spacing:.08em; cursor:pointer;
+  }
+
+  .banner{
+    margin-top:18px; padding:12px 14px; border:1.5px dashed rgba(255,176,0,.4);
+    border-radius:4px; font-size:11.5px; color:rgba(232,229,218,.65); line-height:1.6;
+  }
+
+  details{ margin-top:26px; border-top:1px solid rgba(232,229,218,.15); padding-top:14px; }
+  summary{ cursor:pointer; font-size:11px; letter-spacing:.1em; color:rgba(232,229,218,.5); }
+  code{ display:block; margin-top:10px; padding:10px; background:rgba(232,229,218,.06); border-radius:3px; font-size:11.5px; word-break:break-all; color:var(--paper); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="cue-num">CUE FLASH — CONTROL (DEMO)</div>
+      <h1>SEND TO STAGE</h1>
+    </div>
+    <div id="connStatus"><span id="connDot"></span><span id="connLabel">--</span></div>
+  </header>
+
+  <div class="banner">This page talks to a GitHub Codespace demo, not a local server. If it's asleep, nothing will happen when you press send — check the status page.</div>
+
+  <div class="section-label">QUICK CUES</div>
+  <div class="presets" id="presets">
+    <button class="preset-btn" data-msg="5 MINUTES" data-mode="dark"><span class="tag">TIME</span>5 MINUTES</button>
+    <button class="preset-btn" data-msg="1 MINUTE" data-mode="dark"><span class="tag">TIME</span>1 MINUTE</button>
+    <button class="preset-btn urgent" data-msg="WRAP UP" data-mode="urgent"><span class="tag">ACTION</span>WRAP UP</button>
+    <button class="preset-btn urgent" data-msg="STOP" data-mode="urgent"><span class="tag">ACTION</span>STOP</button>
+    <button class="preset-btn" data-msg="SLOW DOWN" data-mode="dark"><span class="tag">PACING</span>SLOW DOWN</button>
+    <button class="preset-btn" data-msg="LOUDER" data-mode="dark"><span class="tag">AUDIO</span>LOUDER</button>
+  </div>
+
+  <div class="section-label">CUSTOM MESSAGE</div>
+  <textarea id="customMsg" placeholder="Type a message to flash…" maxlength="80"></textarea>
+
+  <div class="section-label">ACCESS TOKEN <span style="text-transform:none; letter-spacing:0;">(leave blank if the demo has none set)</span></div>
+  <input id="tokenInput" type="password" placeholder="Access token" style="width:100%; background:rgba(232,229,218,.05); border:1.5px solid rgba(232,229,218,.3); border-radius:3px; color:var(--paper); font-family:'JetBrains Mono', monospace; font-size:14px; padding:12px; outline:none;">
+
+  <div class="row">
+    <div class="toggle-group" id="modeGroup">
+      <button class="toggle active" data-mode="dark">DARK</button>
+      <button class="toggle" data-mode="light">LIGHT</button>
+      <button class="toggle" data-mode="urgent">URGENT</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="toggle-group" id="flashGroup">
+      <button class="toggle active" data-flash="off">STEADY</button>
+      <button class="toggle" data-flash="on">FLASHING</button>
+    </div>
+  </div>
+
+  <button id="goBtn" disabled>SEND TO SCREEN</button>
+  <button id="clearBtn">CLEAR DISPLAY</button>
+
+  <details>
+    <summary>COMPANION / API REFERENCE</summary>
+    <code id="apiSample">GET /api/flash?message=WRAP+UP&amp;mode=urgent&amp;flash=1</code>
+    <code id="apiClear">GET /api/clear</code>
+  </details>
+</div>
+
+<script src="cueflash-config.js"></script>
+<script>
+  var API_BASE = window.CUEFLASH_API_BASE || '';
+
+  var customMsg = document.getElementById('customMsg');
+  var tokenInput = document.getElementById('tokenInput');
+  var goBtn = document.getElementById('goBtn');
+  var clearBtn = document.getElementById('clearBtn');
+  var modeGroup = document.getElementById('modeGroup');
+  var flashGroup = document.getElementById('flashGroup');
+  var presets = document.getElementById('presets');
+  var connDot = document.getElementById('connDot');
+  var connLabel = document.getElementById('connLabel');
+
+  // Remember the token locally so it's a one-time entry per browser
+  tokenInput.value = localStorage.getItem('cueflash_token') || '';
+  tokenInput.addEventListener('input', function () {
+    localStorage.setItem('cueflash_token', tokenInput.value);
+  });
+
+  var currentPresetMsg = '';
+  var currentMode = 'dark';
+  var currentFlash = false;
+
+  function setMode(mode){
+    currentMode = mode;
+    Array.prototype.forEach.call(modeGroup.children, function(b){
+      var isActive = b.dataset.mode === mode;
+      b.classList.toggle('active', isActive);
+      b.classList.toggle('mode-urgent', isActive && mode === 'urgent');
+    });
+  }
+  function setFlash(on){
+    currentFlash = on;
+    Array.prototype.forEach.call(flashGroup.children, function(b){
+      b.classList.toggle('active', (b.dataset.flash === 'on') === on);
+    });
+  }
+  modeGroup.addEventListener('click', function(e){
+    var btn = e.target.closest('.toggle'); if(!btn) return; setMode(btn.dataset.mode);
+  });
+  flashGroup.addEventListener('click', function(e){
+    var btn = e.target.closest('.toggle'); if(!btn) return; setFlash(btn.dataset.flash === 'on');
+  });
+
+  function updateGoState(){
+    var text = customMsg.value.trim() || currentPresetMsg;
+    goBtn.disabled = !text;
+  }
+  customMsg.addEventListener('input', function(){
+    currentPresetMsg = '';
+    Array.prototype.forEach.call(presets.querySelectorAll('.preset-btn'), function(b){ b.classList.remove('active-preset'); });
+    updateGoState();
+  });
+
+  presets.addEventListener('click', function(e){
+    var btn = e.target.closest('.preset-btn'); if(!btn) return;
+    currentPresetMsg = btn.dataset.msg;
+    customMsg.value = '';
+    Array.prototype.forEach.call(presets.querySelectorAll('.preset-btn'), function(b){ b.classList.remove('active-preset'); });
+    btn.classList.add('active-preset');
+    setMode(btn.dataset.mode === 'urgent' ? 'urgent' : 'dark');
+    updateGoState();
+  });
+
+  function sendFlash(){
+    var text = customMsg.value.trim() || currentPresetMsg;
+    if(!text) return;
+    var url = API_BASE + '/api/flash?message=' + encodeURIComponent(text) + '&mode=' + currentMode + '&flash=' + (currentFlash ? '1':'0');
+    if(tokenInput.value) url += '&token=' + encodeURIComponent(tokenInput.value);
+    fetch(url).then(function(r){
+      if(r.status === 401){ alert('Access token rejected — check the token field.'); }
+    }).catch(function(){
+      alert('Could not reach the demo server — it may be asleep.');
+    });
+  }
+  goBtn.addEventListener('click', sendFlash);
+  clearBtn.addEventListener('click', function(){
+    var url = API_BASE + '/api/clear';
+    if(tokenInput.value) url += '?token=' + encodeURIComponent(tokenInput.value);
+    fetch(url).then(function(r){
+      if(r.status === 401){ alert('Access token rejected — check the token field.'); }
+    }).catch(function(){
+      alert('Could not reach the demo server — it may be asleep.');
+    });
+  });
+
+  // live-update the API reference sample as options change
+  function refreshSample(){
+    var text = (customMsg.value.trim() || currentPresetMsg || 'WRAP UP').replace(/ /g,'+');
+    var tok = tokenInput.value ? ('&token=' + encodeURIComponent(tokenInput.value)) : '';
+    document.getElementById('apiSample').textContent =
+      'GET ' + API_BASE + '/api/flash?message=' + text + '&mode=' + currentMode + '&flash=' + (currentFlash?'1':'0') + tok;
+    document.getElementById('apiClear').textContent = 'GET ' + API_BASE + '/api/clear';
+  }
+  tokenInput.addEventListener('input', refreshSample);
+  modeGroup.addEventListener('click', refreshSample);
+  flashGroup.addEventListener('click', refreshSample);
+  presets.addEventListener('click', refreshSample);
+  customMsg.addEventListener('input', refreshSample);
+
+  // connection indicator (polls /api/state just to confirm the server is reachable)
+  function checkConn(){
+    fetch(API_BASE + '/api/state', { cache: 'no-store' }).then(function(r){
+      connDot.classList.toggle('live', r.ok);
+      connLabel.textContent = r.ok ? 'DEMO AWAKE' : 'DEMO ASLEEP';
+    }).catch(function(){
+      connDot.classList.remove('live');
+      connLabel.textContent = 'DEMO ASLEEP';
+    });
+  }
+  checkConn();
+  setInterval(checkConn, 5000);
+
+  updateGoState();
+  refreshSample();
+</script>
+</body>
+</html>
