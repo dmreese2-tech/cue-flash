@@ -2,7 +2,7 @@
   "name": "Cue Flash Demo",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
   "postCreateCommand": "npm install",
-  "postStartCommand": "(nohup node server.js > /tmp/cueflash.log 2>&1 &) ",
+  "postStartCommand": "(nohup node server.js > /tmp/cueflash.log 2>&1 &) ; (gh codespace ports visibility 3000:public -c $CODESPACE_NAME || true)",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
@@ -12,3 +12,4 @@
     }
   }
 }
+
