@@ -85,10 +85,12 @@
   <p class="sub">Full instructions, iPad setup, and Bitfocus Companion wiring are in the repo's README.</p>
 </div>
 
+<script src="cueflash-config.js"></script>
 <script>
-  // Fill this in once you have your Codespace's forwarded URL, e.g.
-  // "https://your-codespace-name-3000.app.github.dev"
-  var DEMO_BASE = "https://obscure-spoon-vppv67p7xv7r2665q-3000.app.github.dev";
+  // Fill this in once you have your Codespace's forwarded URL — see
+  // cueflash-config.js, which this page and control.html/display.html
+  // all read from, so there's only one place to update it.
+  var DEMO_BASE = window.CUEFLASH_API_BASE || "";
 
   var dot = document.getElementById('statusDot');
   var title = document.getElementById('statusTitle');
@@ -101,7 +103,7 @@
     detail.textContent = detailText;
     if(enableLink){
       link.classList.remove('disabled');
-      link.href = DEMO_BASE + '/control.html';
+      link.href = 'control.html';
     } else {
       link.classList.add('disabled');
       link.removeAttribute('href');
