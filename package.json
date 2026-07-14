@@ -1,0 +1,14 @@
+{
+  "name": "cue-flash-server",
+  "version": "1.0.0",
+  "description": "LAN message-flash system for stage/AV: desktop control panel, iOS 9+ display client, HTTP API for Bitfocus Companion.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-windows": "^1.0.0-beta.8",
+    "ws": "^8.17.0"
+  }
+}
