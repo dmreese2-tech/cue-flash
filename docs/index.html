@@ -68,6 +68,7 @@
       <div class="status-title" id="statusTitle">CHECKING DEMO STATUS&hellip;</div>
       <div class="status-detail" id="statusDetail">Pinging the Codespace.</div>
       <a href="#" class="demo-link disabled" id="demoLink" target="_blank" rel="noopener">OPEN DEMO CONTROL PANEL</a>
+      <a href="#" class="demo-link disabled" id="demoDisplayLink" target="_blank" rel="noopener" style="margin-left:10px;">OPEN DEMO DISPLAY</a>
     </div>
   </div>
 
@@ -96,6 +97,7 @@
   var title = document.getElementById('statusTitle');
   var detail = document.getElementById('statusDetail');
   var link = document.getElementById('demoLink');
+  var displayLink = document.getElementById('demoDisplayLink');
 
   function setState(state, titleText, detailText, enableLink){
     dot.className = 'status-dot ' + state;
@@ -104,9 +106,13 @@
     if(enableLink){
       link.classList.remove('disabled');
       link.href = 'control.html';
+      displayLink.classList.remove('disabled');
+      displayLink.href = 'display.html';
     } else {
       link.classList.add('disabled');
       link.removeAttribute('href');
+      displayLink.classList.add('disabled');
+      displayLink.removeAttribute('href');
     }
   }
 
